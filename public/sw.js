@@ -1,4 +1,4 @@
-const CACHE = "daybreak-v1";
+const CACHE = "daybreak-v2";
 const APP_SHELL = "/";
 
 self.addEventListener("install", (event) => {

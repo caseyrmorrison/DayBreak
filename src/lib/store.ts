@@ -303,8 +303,14 @@ export const useDaybreak = create<DaybreakState>()(
         if (!parsed.success) return current;
         return { ...current, ...parsed.data };
       },
-      onRehydrateStorage: () => (state) => {
-        state?.markHydrated();
+      // Always dismiss the loading screen: a failed hydration should
+      // fall back to a fresh state, never an infinite "Loading…".
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error("Daybreak: hydration failed, starting fresh", error);
+        }
+        if (state) state.markHydrated();
+        else useDaybreak.getState().markHydrated();
       },
     },
   ),

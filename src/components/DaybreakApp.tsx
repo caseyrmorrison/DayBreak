@@ -27,7 +27,17 @@ export default function DaybreakApp() {
   const plan = useDaybreak((s) => s.plans[today]);
 
   useEffect(() => {
-    void useDaybreak.persist.rehydrate();
+    const markAnyway = () => {
+      if (!useDaybreak.getState().hydrated) {
+        useDaybreak.getState().markHydrated();
+      }
+    };
+    Promise.resolve(useDaybreak.persist.rehydrate()).catch(markAnyway);
+    // Belt and suspenders: whatever goes wrong, never strand the user
+    // on the loading screen — worst case they get a fresh view while
+    // their data stays untouched in localStorage.
+    const timer = setTimeout(markAnyway, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
