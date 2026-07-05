@@ -61,6 +61,22 @@ npm run dev        # http://localhost:3000
 | `npm run test:watch` | Run tests in watch mode                |
 | `npm run lint`       | ESLint (includes React Compiler rules) |
 
+### Running it day to day
+
+For daily use, serve the production build at http://localhost:3200 and
+install it from the browser's address bar (it's a PWA — it gets its own
+dock icon and works offline). To keep the server running after the
+terminal closes:
+
+```bash
+npm run build   # only needed after code changes
+nohup npx next start -p 3200 > ~/Library/Logs/daybreak.log 2>&1 &
+```
+
+The server does not survive a reboot — rerun the command above (or ask
+Claude to set up a macOS LaunchAgent so it starts at login automatically).
+Logs land in `~/Library/Logs/daybreak.log`.
+
 ## Data and privacy
 
 All data lives in your browser's `localStorage` under the `daybreak.v1` key —
