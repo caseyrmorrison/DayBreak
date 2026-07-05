@@ -71,7 +71,12 @@ terminal closes:
 ```bash
 npm run build   # only needed after code changes
 nohup npx next start -p 3200 > ~/Library/Logs/daybreak.log 2>&1 &
+nohup node scripts/port3000-redirect.mjs > /dev/null 2>&1 &   # optional: makes :3000 redirect here
 ```
+
+If the app ever gets stuck (e.g. a stale offline cache after the server
+was down), visit http://localhost:3200/reset.html — it clears the service
+worker and cached files without touching your data.
 
 The server does not survive a reboot — rerun the command above (or ask
 Claude to set up a macOS LaunchAgent so it starts at login automatically).
