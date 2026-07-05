@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { addDays, isConsecutive } from "./dates";
 import {
+  EPOCH,
   LIMITS,
   persistedStateSchema,
   type DayPlan,
@@ -29,14 +30,20 @@ type DaybreakState = PersistedState & {
   closeDay: (date: string) => void;
   reopenDay: (date: string) => void;
   setName: (name: string) => void;
+  applyMergedState: (merged: PersistedState) => void;
 };
 
 const initialData: PersistedState = {
   plans: {},
   inbox: [],
-  streak: { count: 0, lastWinDate: null },
-  settings: { name: null },
+  inboxDeletions: {},
+  streak: { count: 0, lastWinDate: null, updatedAt: EPOCH },
+  settings: { name: null, updatedAt: EPOCH },
 };
+
+function now(): string {
+  return new Date().toISOString();
+}
 
 function sanitizeText(raw: string, max: number): string {
   return raw.replace(/\s+/g, " ").trim().slice(0, max);
@@ -78,7 +85,7 @@ function applyWin(streak: Streak, date: string): Streak {
     streak.lastWinDate && isConsecutive(streak.lastWinDate, date)
       ? streak.count + 1
       : 1;
-  return { count, lastWinDate: date };
+  return { count, lastWinDate: date, updatedAt: now() };
 }
 
 function finalizeOpenPastPlans(
@@ -93,7 +100,11 @@ function finalizeOpenPastPlans(
   const nextPlans = { ...plans };
   let nextStreak = streak;
   for (const plan of pastOpen) {
-    nextPlans[plan.date] = { ...plan, shutdownAt: new Date().toISOString() };
+    nextPlans[plan.date] = {
+      ...plan,
+      shutdownAt: now(),
+      updatedAt: now(),
+    };
     if (plan.tasks[0]?.done) {
       nextStreak = applyWin(nextStreak, plan.date);
     }
@@ -101,6 +112,8 @@ function finalizeOpenPastPlans(
   return { plans: nextPlans, streak: nextStreak };
 }
 
+// Every plan mutation flows through here so updatedAt (the sync
+// merge tiebreaker) can never be forgotten.
 function updatePlan(
   state: DaybreakState,
   date: string,
@@ -108,7 +121,38 @@ function updatePlan(
 ): Partial<DaybreakState> {
   const plan = state.plans[date];
   if (!plan) return {};
-  return { plans: { ...state.plans, [date]: fn(plan) } };
+  const next = fn(plan);
+  if (next === plan) return {};
+  return { plans: { ...state.plans, [date]: { ...next, updatedAt: now() } } };
+}
+
+// v1 predates sync: no updatedAt stamps, no tombstones. Stamp with
+// EPOCH so anything written since always wins a merge against it.
+export function migratePersistedState(
+  persisted: unknown,
+  version: number,
+): unknown {
+  if (version >= 2 || typeof persisted !== "object" || persisted === null) {
+    return persisted;
+  }
+  const v1 = persisted as {
+    plans?: Record<string, { date: string; tasks: Task[]; shutdownAt?: string }>;
+    inbox?: InboxItem[];
+    streak?: { count: number; lastWinDate: string | null };
+    settings?: { name: string | null };
+  };
+  return {
+    plans: Object.fromEntries(
+      Object.entries(v1.plans ?? {}).map(([date, plan]) => [
+        date,
+        { ...plan, updatedAt: EPOCH },
+      ]),
+    ),
+    inbox: v1.inbox ?? [],
+    inboxDeletions: {},
+    streak: { ...(v1.streak ?? { count: 0, lastWinDate: null }), updatedAt: EPOCH },
+    settings: { ...(v1.settings ?? { name: null }), updatedAt: EPOCH },
+  };
 }
 
 export const useDaybreak = create<DaybreakState>()(
@@ -131,7 +175,7 @@ export const useDaybreak = create<DaybreakState>()(
           return {
             plans: {
               ...prunePlans(finalized.plans, date),
-              [date]: { date, tasks },
+              [date]: { date, tasks, updatedAt: now() },
             },
             streak: finalized.streak,
           };
@@ -150,7 +194,7 @@ export const useDaybreak = create<DaybreakState>()(
                     done: !t.done,
                     ...(t.done
                       ? { completedAt: undefined }
-                      : { completedAt: new Date().toISOString() }),
+                      : { completedAt: now() }),
                   }
                 : t,
             ),
@@ -172,7 +216,7 @@ export const useDaybreak = create<DaybreakState>()(
         const item: InboxItem = {
           id: crypto.randomUUID(),
           text: clean,
-          createdAt: new Date().toISOString(),
+          createdAt: now(),
         };
         set((s) => ({
           inbox: [item, ...s.inbox].slice(0, LIMITS.maxInboxItems),
@@ -181,7 +225,10 @@ export const useDaybreak = create<DaybreakState>()(
       },
 
       removeFromInbox: (id) =>
-        set((s) => ({ inbox: s.inbox.filter((i) => i.id !== id) })),
+        set((s) => ({
+          inbox: s.inbox.filter((i) => i.id !== id),
+          inboxDeletions: { ...s.inboxDeletions, [id]: now() },
+        })),
 
       promoteInboxItem: (id, date) => {
         const s = get();
@@ -200,9 +247,10 @@ export const useDaybreak = create<DaybreakState>()(
         set((st) => ({
           plans: {
             ...st.plans,
-            [date]: { ...plan, tasks: [...plan.tasks, task] },
+            [date]: { ...plan, tasks: [...plan.tasks, task], updatedAt: now() },
           },
           inbox: st.inbox.filter((i) => i.id !== id),
+          inboxDeletions: { ...st.inboxDeletions, [id]: now() },
         }));
         return true;
       },
@@ -213,10 +261,7 @@ export const useDaybreak = create<DaybreakState>()(
         if (!plan || plan.shutdownAt) return;
         const streak = plan.tasks[0]?.done ? applyWin(s.streak, date) : s.streak;
         set((st) => ({
-          ...updatePlan(st, date, (p) => ({
-            ...p,
-            shutdownAt: new Date().toISOString(),
-          })),
+          ...updatePlan(st, date, (p) => ({ ...p, shutdownAt: now() })),
           streak,
         }));
       },
@@ -228,17 +273,28 @@ export const useDaybreak = create<DaybreakState>()(
 
       setName: (name) => {
         const clean = sanitizeText(name, LIMITS.name);
-        set({ settings: { name: clean || null } });
+        set({ settings: { name: clean || null, updatedAt: now() } });
       },
+
+      applyMergedState: (merged) =>
+        set({
+          plans: merged.plans,
+          inbox: merged.inbox,
+          inboxDeletions: merged.inboxDeletions,
+          streak: merged.streak,
+          settings: merged.settings,
+        }),
     }),
     {
       name: "daybreak.v1",
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
+      migrate: migratePersistedState,
       partialize: (s) => ({
         plans: s.plans,
         inbox: s.inbox,
+        inboxDeletions: s.inboxDeletions,
         streak: s.streak,
         settings: s.settings,
       }),

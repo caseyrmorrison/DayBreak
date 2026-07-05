@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { todayKey } from "@/lib/dates";
 import { useDaybreak } from "@/lib/store";
+import { initSyncEngine, teardownSyncEngine } from "@/lib/sync";
 import CommandPalette from "./CommandPalette";
 import Kickoff from "./Kickoff";
+import SyncDialog from "./SyncDialog";
 import TodayView from "./TodayView";
 
 function useTodayKey(): string {
@@ -28,6 +30,12 @@ export default function DaybreakApp() {
     void useDaybreak.persist.rehydrate();
   }, []);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    initSyncEngine();
+    return teardownSyncEngine;
+  }, [hydrated]);
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-1 flex-col px-6 py-14 sm:py-20">
       {!hydrated ? (
@@ -40,6 +48,7 @@ export default function DaybreakApp() {
         <Kickoff today={today} />
       )}
       {hydrated && <CommandPalette today={today} />}
+      {hydrated && <SyncDialog />}
     </main>
   );
 }

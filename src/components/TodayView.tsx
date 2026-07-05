@@ -1,6 +1,6 @@
 "use client";
 
-import { Flame, Play, X } from "lucide-react";
+import { Cloud, CloudAlert, Flame, Play, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { formatDateKey, greetingFor } from "@/lib/dates";
@@ -21,6 +21,8 @@ export default function TodayView({ today }: { today: string }) {
   const reopenDay = useDaybreak((s) => s.reopenDay);
   const focusId = useUi((s) => s.focusTaskId);
   const setFocusId = useUi((s) => s.setFocusTask);
+  const setSyncDialogOpen = useUi((s) => s.setSyncDialogOpen);
+  const syncStatus = useUi((s) => s.syncStatus);
 
   if (!plan) return null;
 
@@ -163,6 +165,24 @@ export default function TodayView({ today }: { today: string }) {
             </span>
           </span>
           <span className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSyncDialogOpen(true)}
+            >
+              {syncStatus === "error" ? (
+                <CloudAlert aria-hidden />
+              ) : (
+                <Cloud aria-hidden />
+              )}
+              {syncStatus === "off"
+                ? "Sync"
+                : syncStatus === "syncing"
+                  ? "Syncing…"
+                  : syncStatus === "error"
+                    ? "Sync issue"
+                    : "Synced"}
+            </Button>
             <InboxSheet today={today} />
             {!closed && <ShutdownDialog today={today} />}
           </span>

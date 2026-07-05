@@ -2,21 +2,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useDaybreak } from "@/lib/store";
+import { resetStores } from "@/lib/test-helpers";
 import { useUi } from "@/lib/ui-store";
 import CommandPalette from "./CommandPalette";
 
 const TODAY = "2026-07-04";
 
-beforeEach(() => {
-  localStorage.clear();
-  useDaybreak.setState({
-    plans: {},
-    inbox: [],
-    streak: { count: 0, lastWinDate: null },
-    settings: { name: null },
-  });
-  useUi.setState({ paletteOpen: false, focusTaskId: null });
-});
+beforeEach(resetStores);
 
 describe("CommandPalette", () => {
   it("opens with ctrl+k and captures a thought to the inbox", async () => {

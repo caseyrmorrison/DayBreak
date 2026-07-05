@@ -64,8 +64,37 @@ npm run dev        # http://localhost:3000
 ## Data and privacy
 
 All data lives in your browser's `localStorage` under the `daybreak.v1` key —
-there is no backend, no account, and nothing leaves your machine. Plans older
-than 30 days are pruned automatically. Clearing site data resets the app.
+there is no backend requirement, no account, and by default nothing leaves
+your machine. Plans older than 30 days are pruned automatically. Clearing
+site data resets the app.
+
+## Sync across devices
+
+Optional, end-to-end encrypted, and account-free. Open **Sync** in the
+footer (or the link on the kickoff screen):
+
+- **Create a sync code** on your first device. The code is both your
+  identity and your encryption key.
+- **Link** your other devices/browsers by entering the code there. States
+  merge record-by-record (last write wins; deleted inbox items stay deleted
+  via tombstones), so linking never wipes local work.
+- Syncing happens automatically a moment after changes, when the tab is
+  hidden, and on app open — or on demand via **Sync now** (also in ⌘K).
+
+How it stays private: the client derives two values from the code — a sync
+id (sent to the server to name your blob) and an AES-256-GCM key (never
+sent anywhere). The server ([src/app/api/sync/route.ts](src/app/api/sync/route.ts))
+is a dumb versioned vault doing compare-and-swap on ciphertext; it cannot
+read your data, and the id cannot be reversed into the code. Treat the code
+like a password: anyone holding it can read and write your synced data, and
+losing it means the server copy is unrecoverable (by design).
+
+Storage defaults to a local SQLite file (`data/daybreak-sync.db`). Other
+devices on your network can reach it at `http://<your-machine-ip>:3200`.
+For sync from anywhere, deploy to Vercel and point `SYNC_DB_URL` /
+`SYNC_DB_AUTH_TOKEN` at a free [Turso](https://turso.tech) database (see
+[.env.example](.env.example)) — and create a fresh sync code after moving
+servers.
 
 ## Security notes
 
@@ -109,7 +138,11 @@ src/
     dates.ts      Date-key helpers (local timezone, streak math)
     schema.ts     Zod schemas + input limits (single source of truth)
     store.ts      Zustand store, persistence, streak/rollover logic
-    ui-store.ts   Ephemeral UI state (palette, focus session)
+    merge.ts      Record-level LWW merge for device sync
+    sync-crypto.ts Pairing codes, key derivation, AES-GCM blobs
+    sync.ts       Sync engine: pull → merge → CAS push with retry
+    ui-store.ts   Ephemeral UI state (palette, focus, sync status)
+    server/db.ts  libsql client (local SQLite file or Turso)
 public/
   sw.js           Service worker: offline app shell + asset cache
   icon-*.png      PWA icons (generated sunrise mark)
@@ -117,6 +150,6 @@ public/
 
 ## Roadmap
 
-- Optional multi-device sync (local-first engines: Electric SQL, Zero)
+- QR-code pairing (scan instead of typing the sync code)
 - Weekly review: a Sunday view of streaks and what shipped
 - Configurable focus timer presets (Pomodoro-style cycles)

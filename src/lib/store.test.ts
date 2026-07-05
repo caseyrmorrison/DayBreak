@@ -1,20 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import { LIMITS, persistedStateSchema } from "./schema";
-import { currentStreak, rolloverSuggestions, useDaybreak } from "./store";
+import { EPOCH, LIMITS, persistedStateSchema } from "./schema";
+import {
+  currentStreak,
+  migratePersistedState,
+  rolloverSuggestions,
+  useDaybreak,
+} from "./store";
+import { resetStores } from "./test-helpers";
 
 const TODAY = "2026-07-04";
 const YESTERDAY = "2026-07-03";
 
-beforeEach(() => {
-  localStorage.clear();
-  useDaybreak.setState({
-    plans: {},
-    inbox: [],
-    streak: { count: 0, lastWinDate: null },
-    settings: { name: null },
-  });
-});
+beforeEach(resetStores);
 
 describe("startDay", () => {
   it("creates a plan with sanitized tasks", () => {
@@ -80,7 +78,7 @@ describe("startDay", () => {
     s.startDay(TODAY, [{ title: "next big thing" }]);
     const state = useDaybreak.getState();
     expect(state.plans[YESTERDAY].shutdownAt).toBeDefined();
-    expect(state.streak).toEqual({ count: 1, lastWinDate: YESTERDAY });
+    expect(state.streak).toMatchObject({ count: 1, lastWinDate: YESTERDAY });
   });
 });
 
@@ -163,7 +161,7 @@ describe("closeDay and streaks", () => {
 
   it("starts a streak on a win", () => {
     winDay(TODAY);
-    expect(useDaybreak.getState().streak).toEqual({
+    expect(useDaybreak.getState().streak).toMatchObject({
       count: 1,
       lastWinDate: TODAY,
     });
@@ -174,7 +172,7 @@ describe("closeDay and streaks", () => {
     winDay("2026-06-30");
     expect(useDaybreak.getState().streak.count).toBe(2);
     winDay(TODAY);
-    expect(useDaybreak.getState().streak).toEqual({
+    expect(useDaybreak.getState().streak).toMatchObject({
       count: 1,
       lastWinDate: TODAY,
     });
@@ -196,11 +194,14 @@ describe("closeDay and streaks", () => {
 
 describe("currentStreak", () => {
   it("shows the count while the streak is alive and 0 once it lapses", () => {
-    const streak = { count: 3, lastWinDate: YESTERDAY };
+    const streak = { count: 3, lastWinDate: YESTERDAY, updatedAt: EPOCH };
     expect(currentStreak({ streak }, TODAY)).toBe(3);
     expect(currentStreak({ streak }, "2026-07-06")).toBe(0);
     expect(
-      currentStreak({ streak: { count: 0, lastWinDate: null } }, TODAY),
+      currentStreak(
+        { streak: { count: 0, lastWinDate: null, updatedAt: EPOCH } },
+        TODAY,
+      ),
     ).toBe(0);
   });
 });
@@ -228,11 +229,52 @@ describe("persisted state validation", () => {
   it("accepts a valid state roundtrip", () => {
     useDaybreak.getState().startDay(TODAY, [{ title: "big" }]);
     useDaybreak.getState().addToInbox("a thought");
-    const { plans, inbox, streak, settings } = useDaybreak.getState();
+    useDaybreak
+      .getState()
+      .removeFromInbox(useDaybreak.getState().inbox[0].id);
+    const { plans, inbox, inboxDeletions, streak, settings } =
+      useDaybreak.getState();
+    expect(Object.keys(inboxDeletions)).toHaveLength(1);
     expect(
-      persistedStateSchema.safeParse({ plans, inbox, streak, settings })
-        .success,
+      persistedStateSchema.safeParse({
+        plans,
+        inbox,
+        inboxDeletions,
+        streak,
+        settings,
+      }).success,
     ).toBe(true);
+  });
+
+  it("migrates a v1 persisted shape to v2", () => {
+    const v1 = {
+      plans: {
+        [TODAY]: {
+          date: TODAY,
+          tasks: [
+            { id: "12345678-abcd", title: "old task", done: false },
+          ],
+        },
+      },
+      inbox: [
+        { id: "87654321-dcba", text: "old thought", createdAt: EPOCH },
+      ],
+      streak: { count: 2, lastWinDate: YESTERDAY },
+      settings: { name: "Casey" },
+    };
+    const migrated = migratePersistedState(v1, 1);
+    const parsed = persistedStateSchema.safeParse(migrated);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.plans[TODAY].updatedAt).toBe(EPOCH);
+      expect(parsed.data.inboxDeletions).toEqual({});
+      expect(parsed.data.streak).toEqual({
+        count: 2,
+        lastWinDate: YESTERDAY,
+        updatedAt: EPOCH,
+      });
+      expect(parsed.data.settings.name).toBe("Casey");
+    }
   });
 
   it("rejects tampered or corrupt data", () => {

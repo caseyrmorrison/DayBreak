@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Moon, Play, Plus, Sun } from "lucide-react";
+import { Check, Cloud, Moon, Play, Plus, Sun } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LIMITS } from "@/lib/schema";
@@ -23,6 +23,8 @@ export default function CommandPalette({ today }: { today: string }) {
   const open = useUi((s) => s.paletteOpen);
   const setOpen = useUi((s) => s.setPaletteOpen);
   const setFocusTask = useUi((s) => s.setFocusTask);
+  const syncStatus = useUi((s) => s.syncStatus);
+  const setSyncDialogOpen = useUi((s) => s.setSyncDialogOpen);
   const plan = useDaybreak((s) => s.plans[today]);
   const addToInbox = useDaybreak((s) => s.addToInbox);
   const toggleTask = useDaybreak((s) => s.toggleTask);
@@ -122,6 +124,28 @@ export default function CommandPalette({ today }: { today: string }) {
       });
     }
 
+    contextual.push(
+      syncStatus === "off"
+        ? {
+            id: "setup-sync",
+            label: "Set up sync across devices",
+            icon: <Cloud aria-hidden />,
+            run: () => {
+              dismiss();
+              setSyncDialogOpen(true);
+            },
+          }
+        : {
+            id: "sync-now",
+            label: "Sync now",
+            icon: <Cloud aria-hidden />,
+            run: () => {
+              void import("@/lib/sync").then((m) => m.syncNow());
+              dismiss();
+            },
+          },
+    );
+
     const q = trimmed.toLowerCase();
     result.push(
       ...(q
@@ -129,7 +153,7 @@ export default function CommandPalette({ today }: { today: string }) {
         : contextual),
     );
     return result;
-  }, [query, plan, today, addToInbox, toggleTask, closeDay, reopenDay, setFocusTask, handleOpenChange]);
+  }, [query, plan, today, addToInbox, toggleTask, closeDay, reopenDay, setFocusTask, handleOpenChange, syncStatus, setSyncDialogOpen]);
 
   const clampedHighlight = Math.min(highlighted, Math.max(actions.length - 1, 0));
 

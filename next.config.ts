@@ -19,6 +19,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  serverExternalPackages: ["@libsql/client", "libsql"],
   async headers() {
     return [
       {

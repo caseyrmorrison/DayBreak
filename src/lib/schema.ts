@@ -29,6 +29,7 @@ export const dayPlanSchema = z.object({
   date: dateKeySchema,
   tasks: z.array(taskSchema).min(1).max(LIMITS.maxTasksPerDay),
   shutdownAt: isoSchema.optional(),
+  updatedAt: isoSchema,
 });
 
 export const inboxItemSchema = z.object({
@@ -37,17 +38,24 @@ export const inboxItemSchema = z.object({
   createdAt: isoSchema,
 });
 
+// updatedAt stamps drive last-write-wins merging across devices; the
+// tombstone map keeps deleted inbox items from resurrecting on sync.
 export const persistedStateSchema = z.object({
   plans: z.record(dateKeySchema, dayPlanSchema),
   inbox: z.array(inboxItemSchema).max(LIMITS.maxInboxItems),
+  inboxDeletions: z.record(idSchema, isoSchema),
   streak: z.object({
     count: z.number().int().nonnegative(),
     lastWinDate: dateKeySchema.nullable(),
+    updatedAt: isoSchema,
   }),
   settings: z.object({
     name: z.string().max(LIMITS.name).nullable(),
+    updatedAt: isoSchema,
   }),
 });
+
+export const EPOCH = "1970-01-01T00:00:00.000Z";
 
 export type Task = z.infer<typeof taskSchema>;
 export type DayPlan = z.infer<typeof dayPlanSchema>;

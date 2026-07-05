@@ -2,20 +2,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useDaybreak } from "@/lib/store";
+import { resetStores } from "@/lib/test-helpers";
 import Kickoff from "./Kickoff";
 import TodayView from "./TodayView";
 
 const TODAY = "2026-07-04";
 
-beforeEach(() => {
-  localStorage.clear();
-  useDaybreak.setState({
-    plans: {},
-    inbox: [],
-    streak: { count: 0, lastWinDate: null },
-    settings: { name: null },
-  });
-});
+beforeEach(resetStores);
 
 describe("Kickoff", () => {
   it("starts the day with the big thing", async () => {

@@ -1,14 +1,26 @@
 import "@testing-library/jest-dom/vitest";
-import { randomUUID } from "node:crypto";
+import { randomUUID, webcrypto } from "node:crypto";
 
-if (typeof globalThis.crypto === "undefined") {
-  Object.defineProperty(globalThis, "crypto", { value: {} });
-}
-if (typeof globalThis.crypto.randomUUID !== "function") {
-  Object.defineProperty(globalThis.crypto, "randomUUID", {
-    value: randomUUID,
+const globals = globalThis as { crypto?: Crypto };
+
+if (!globals.crypto) {
+  Object.defineProperty(globalThis, "crypto", {
+    value: webcrypto,
     configurable: true,
   });
+} else {
+  if (typeof globals.crypto.randomUUID !== "function") {
+    Object.defineProperty(globals.crypto, "randomUUID", {
+      value: randomUUID,
+      configurable: true,
+    });
+  }
+  if (typeof globals.crypto.getRandomValues !== "function") {
+    Object.defineProperty(globals.crypto, "getRandomValues", {
+      value: webcrypto.getRandomValues.bind(webcrypto),
+      configurable: true,
+    });
+  }
 }
 
 class MemoryStorage implements Storage {

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { formatDateKey, greetingFor } from "@/lib/dates";
 import { LIMITS } from "@/lib/schema";
 import { rolloverSuggestions, useDaybreak, type TaskDraft } from "@/lib/store";
+import { useUi } from "@/lib/ui-store";
 import { cn } from "@/lib/utils";
 
 const ESTIMATES = [25, 50, 90];
@@ -180,6 +181,13 @@ export default function Kickoff({ today }: { today: string }) {
         <p className="mt-3 text-xs text-muted-foreground">
           Three tasks max. The point is choosing, not listing.
         </p>
+        <button
+          type="button"
+          onClick={() => useUi.getState().setSyncDialogOpen(true)}
+          className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
+        >
+          Have Daybreak on another device? Set up sync
+        </button>
       </div>
     </form>
   );
