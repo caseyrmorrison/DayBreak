@@ -2,10 +2,10 @@
 
 import { Flame, Play, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatDateKey, greetingFor } from "@/lib/dates";
 import { currentStreak, useDaybreak } from "@/lib/store";
+import { useUi } from "@/lib/ui-store";
 import BrainDump from "./BrainDump";
 import FocusOverlay from "./FocusOverlay";
 import InboxSheet from "./InboxSheet";
@@ -19,7 +19,8 @@ export default function TodayView({ today }: { today: string }) {
   const toggleTask = useDaybreak((s) => s.toggleTask);
   const removeTask = useDaybreak((s) => s.removeTask);
   const reopenDay = useDaybreak((s) => s.reopenDay);
-  const [focusId, setFocusId] = useState<string | null>(null);
+  const focusId = useUi((s) => s.focusTaskId);
+  const setFocusId = useUi((s) => s.setFocusTask);
 
   if (!plan) return null;
 
@@ -149,9 +150,17 @@ export default function TodayView({ today }: { today: string }) {
       <div className="mt-auto pt-12">
         <BrainDump />
         <footer className="mt-4 flex items-center justify-between gap-4 border-t border-border pt-5 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Flame className="size-4" aria-hidden />
-            {streak > 0 ? `${streak}-day streak` : "No streak yet"}
+          <span className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <Flame className="size-4" aria-hidden />
+              {streak > 0 ? `${streak}-day streak` : "No streak yet"}
+            </span>
+            <span className="hidden items-center gap-1.5 sm:flex">
+              <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[11px]">
+                ⌘K
+              </kbd>
+              capture
+            </span>
           </span>
           <span className="flex items-center gap-2">
             <InboxSheet today={today} />

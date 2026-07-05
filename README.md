@@ -24,6 +24,15 @@ zero overhead.
 
 Deliberately absent: projects, tags, due dates, priorities, accounts.
 
+**cmd+K (or ctrl+K)** opens a capture palette from anywhere: type a thought
+and press Enter to send it to your inbox without breaking focus, or run
+contextual actions (start a focus session, mark tasks done, close or reopen
+the day).
+
+Daybreak is an **installable PWA**: browsers offer "install app" from the
+address bar, and a service worker caches the app shell so it opens offline —
+fitting, since all data is already local.
+
 ## Stack
 
 - [Next.js 16](https://nextjs.org) (App Router) + React 19 + TypeScript (strict)
@@ -47,6 +56,7 @@ npm run dev        # http://localhost:3000
 | `npm run dev`        | Dev server with hot reload             |
 | `npm run build`      | Production build                       |
 | `npm start`          | Serve the production build             |
+| `npm run prod`       | Serve the production build on :3200    |
 | `npm test`           | Run the Vitest suite once              |
 | `npm run test:watch` | Run tests in watch mode                |
 | `npm run lint`       | ESLint (includes React Compiler rules) |
@@ -69,14 +79,15 @@ defensively:
 - **Input hygiene.** All free-text input is trimmed, whitespace-collapsed,
   and length-capped in the store (not just in the UI). Collection sizes are
   bounded (3 tasks/day, 200 inbox items).
-- **Security headers** in [next.config.ts](next.config.ts): a restrictive
-  Content-Security-Policy (`default-src 'self'`, `frame-ancestors 'none'`,
-  `object-src 'none'`), `X-Content-Type-Options: nosniff`,
-  `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, and HSTS.
-  `script-src` currently allows `'unsafe-inline'` because Next.js injects
-  bootstrap inline scripts; moving to per-request nonces via middleware is on
-  the roadmap. Dev-only relaxations (`'unsafe-eval'`, `ws:`) are gated on
-  `NODE_ENV`.
+- **Nonce-based CSP.** [src/proxy.ts](src/proxy.ts) mints a fresh nonce per
+  request, so `script-src` is `'self' 'nonce-…' 'strict-dynamic'` with **no
+  `'unsafe-inline'`** in production — inline script injection is dead even if
+  markup were compromised. This requires dynamic rendering (the page opts in
+  via `connection()`). Dev-only relaxations (`'unsafe-eval'`, `ws:`, inline
+  styles for HMR) are gated on `NODE_ENV`. Request-independent headers
+  (HSTS, nosniff, `X-Frame-Options: DENY`, Referrer- and Permissions-Policy)
+  live in [next.config.ts](next.config.ts), and the service worker is served
+  with `Cache-Control: no-cache` plus its own locked-down CSP.
 - **No dangerous sinks.** No `dangerouslySetInnerHTML`, no `eval`, no dynamic
   HTML construction; React's escaping handles all user text.
 - **IDs** come from `crypto.randomUUID()`, not `Math.random()`.
@@ -88,19 +99,24 @@ footprint.
 
 ```
 src/
-  app/            Next.js app router (layout, page, globals)
+  proxy.ts        Per-request CSP nonce (Next.js proxy convention)
+  app/            Next.js app router (layout, page, manifest, icons)
   components/     UI: Kickoff, TodayView, TaskRow, FocusOverlay,
-                  BrainDump, InboxSheet, ShutdownDialog
+                  BrainDump, InboxSheet, ShutdownDialog,
+                  CommandPalette, ServiceWorkerRegistrar
     ui/           shadcn/ui primitives (button, input, dialog)
   lib/
     dates.ts      Date-key helpers (local timezone, streak math)
     schema.ts     Zod schemas + input limits (single source of truth)
     store.ts      Zustand store, persistence, streak/rollover logic
+    ui-store.ts   Ephemeral UI state (palette, focus session)
+public/
+  sw.js           Service worker: offline app shell + asset cache
+  icon-*.png      PWA icons (generated sunrise mark)
 ```
 
 ## Roadmap
 
-- CSP nonces via middleware (drop `'unsafe-inline'` for scripts)
-- Installable PWA with offline service worker
 - Optional multi-device sync (local-first engines: Electric SQL, Zero)
-- Keyboard palette (cmd+K) for capture and navigation
+- Weekly review: a Sunday view of streaks and what shipped
+- Configurable focus timer presets (Pomodoro-style cycles)

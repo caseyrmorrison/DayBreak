@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { todayKey } from "@/lib/dates";
 import { useDaybreak } from "@/lib/store";
+import CommandPalette from "./CommandPalette";
 import Kickoff from "./Kickoff";
 import TodayView from "./TodayView";
 
@@ -38,6 +39,7 @@ export default function DaybreakApp() {
       ) : (
         <Kickoff today={today} />
       )}
+      {hydrated && <CommandPalette today={today} />}
     </main>
   );
 }

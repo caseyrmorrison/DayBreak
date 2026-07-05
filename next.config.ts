@@ -1,26 +1,8 @@
 import type { NextConfig } from "next";
 
-const isDev = process.env.NODE_ENV === "development";
-
-// 'unsafe-eval' is required by React Fast Refresh and ws: by HMR — dev only.
-// 'unsafe-inline' for scripts is required by Next.js bootstrap inline scripts;
-// replacing it with per-request nonces needs middleware and is on the roadmap.
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self' data:",
-  `connect-src 'self'${isDev ? " ws:" : ""}`,
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
-].join("; ");
-
+// The Content-Security-Policy lives in src/proxy.ts so every request
+// gets a fresh script nonce. Everything below is request-independent.
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -42,6 +24,22 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      {
+        // The service worker must never be cached (updates would stall)
+        // and gets its own locked-down CSP since the proxy skips it.
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'self'; script-src 'self'",
+          },
+        ],
       },
     ];
   },

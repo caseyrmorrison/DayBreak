@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,18 @@ export const metadata: Metadata = {
   description:
     "Start your day with the one thing that matters. A minimalist, local-first daily focus app.",
   applicationName: "Daybreak",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Daybreak",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export default function RootLayout({
@@ -29,7 +42,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ServiceWorkerRegistrar />
+        {children}
+      </body>
     </html>
   );
 }
