@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
@@ -32,17 +33,22 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Temporary diagnostics (see public/debug-hook.js): needs the CSP
+  // nonce because strict-dynamic ignores the 'self' allowlist.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* eslint-disable-next-line @next/next/no-sync-scripts -- must run before app chunks to catch their load errors */}
+        <script src="/debug-hook.js" nonce={nonce} />
         <ServiceWorkerRegistrar />
         {children}
       </body>

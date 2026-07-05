@@ -5,6 +5,12 @@ import { NextResponse, type NextRequest } from "next/server";
 // Content-Security-Policy request header and stamps it onto every
 // inline script and style it renders.
 export function proxy(request: NextRequest) {
+  // Temporary diagnostics for the stuck-loading investigation: log who
+  // requests what. Remove alongside public/debug-hook.js.
+  console.log(
+    `[req ${new Date().toISOString()}] ${request.nextUrl.pathname} ua="${request.headers.get("user-agent") ?? "?"}"`,
+  );
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
 
