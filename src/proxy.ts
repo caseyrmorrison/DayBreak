@@ -5,12 +5,6 @@ import { NextResponse, type NextRequest } from "next/server";
 // Content-Security-Policy request header and stamps it onto every
 // inline script and style it renders.
 export function proxy(request: NextRequest) {
-  // Temporary diagnostics for the stuck-loading investigation: log who
-  // requests what. Remove alongside public/debug-hook.js.
-  console.log(
-    `[req ${new Date().toISOString()}] ${request.nextUrl.pathname} ua="${request.headers.get("user-agent") ?? "?"}"`,
-  );
-
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
 
@@ -31,7 +25,9 @@ export function proxy(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests",
+    // No upgrade-insecure-requests: it would rewrite same-origin asset
+    // URLs to https on plain-http LAN addresses (http://<mac>.local),
+    // breaking phone access. All our URLs are same-origin anyway.
   ].join("; ");
 
   const requestHeaders = new Headers(request.headers);
