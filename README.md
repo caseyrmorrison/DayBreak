@@ -3,6 +3,8 @@
 A minimalist, local-first daily focus app. It answers one question the moment
 you open it: **what do I do right now?**
 
+Live at [daybreak-crmorrison.vercel.app](https://daybreak-crmorrison.vercel.app).
+
 Most productivity apps make overwhelm worse by showing you everything.
 Daybreak's whole job is to start your day with your biggest task and almost
 zero overhead.
