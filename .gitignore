@@ -44,3 +44,6 @@ next-env.d.ts
 # sync database (local SQLite)
 data/
 !.env.example
+
+# iOS build artifacts
+ios/build/

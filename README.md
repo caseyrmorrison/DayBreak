@@ -5,7 +5,7 @@ you open it: **what do I do right now?**
 
 Live at [daybreak-crmorrison.vercel.app](https://daybreak-crmorrison.vercel.app).
 
-**Documentation:** [User guide](docs/USER-GUIDE.md) · [Cheat sheet](docs/CHEATSHEET.md) · [Architecture](docs/ARCHITECTURE.md)
+**Documentation:** [User guide](docs/USER-GUIDE.md) · [Cheat sheet](docs/CHEATSHEET.md) · [Architecture](docs/ARCHITECTURE.md) · [iOS app](ios/README.md)
 
 Most productivity apps make overwhelm worse by showing you everything.
 Daybreak's whole job is to start your day with your biggest task and almost
