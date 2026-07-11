@@ -316,6 +316,15 @@ export function currentStreak(
   return 0;
 }
 
+export function planHistory(
+  state: Pick<PersistedState, "plans">,
+  today: string,
+): DayPlan[] {
+  return Object.values(state.plans)
+    .filter((p) => p.date < today)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export function rolloverSuggestions(
   state: Pick<PersistedState, "plans">,
   today: string,

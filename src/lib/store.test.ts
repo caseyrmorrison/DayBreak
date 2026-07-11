@@ -4,6 +4,7 @@ import { EPOCH, LIMITS, persistedStateSchema } from "./schema";
 import {
   currentStreak,
   migratePersistedState,
+  planHistory,
   rolloverSuggestions,
   useDaybreak,
 } from "./store";
@@ -222,6 +223,22 @@ describe("rolloverSuggestions", () => {
     expect(rolloverSuggestions(useDaybreak.getState(), "2026-07-01")).toEqual(
       [],
     );
+  });
+});
+
+describe("planHistory", () => {
+  it("returns past days newest first and excludes today", () => {
+    const s = useDaybreak.getState();
+    s.startDay("2026-07-01", [{ title: "oldest" }]);
+    s.startDay(YESTERDAY, [{ title: "recent" }]);
+    s.startDay(TODAY, [{ title: "current" }]);
+    const history = planHistory(useDaybreak.getState(), TODAY);
+    expect(history.map((p) => p.date)).toEqual([YESTERDAY, "2026-07-01"]);
+  });
+
+  it("is empty with no past plans", () => {
+    useDaybreak.getState().startDay(TODAY, [{ title: "current" }]);
+    expect(planHistory(useDaybreak.getState(), TODAY)).toEqual([]);
   });
 });
 

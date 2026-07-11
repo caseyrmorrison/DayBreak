@@ -21,6 +21,7 @@ export default function TodayView({ today }: { today: string }) {
   const focusId = useUi((s) => s.focusTaskId);
   const setFocusId = useUi((s) => s.setFocusTask);
   const setSyncDialogOpen = useUi((s) => s.setSyncDialogOpen);
+  const setHistoryOpen = useUi((s) => s.setHistoryOpen);
   const syncStatus = useUi((s) => s.syncStatus);
 
   if (!plan) return null;
@@ -151,10 +152,18 @@ export default function TodayView({ today }: { today: string }) {
         <BrainDump />
         <footer className="mt-4 flex items-center justify-between gap-4 border-t border-border pt-5 text-sm text-muted-foreground">
           <span className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <Flame className="size-4" aria-hidden />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-2.5"
+              aria-label={`View history — ${
+                streak > 0 ? `${streak}-day streak` : "no streak yet"
+              }`}
+              onClick={() => setHistoryOpen(true)}
+            >
+              <Flame aria-hidden />
               {streak > 0 ? `${streak}-day streak` : "No streak yet"}
-            </span>
+            </Button>
             <span className="hidden items-center gap-1.5 sm:flex">
               <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[11px]">
                 ⌘K

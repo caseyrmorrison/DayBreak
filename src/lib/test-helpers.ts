@@ -18,6 +18,7 @@ export function resetStores(): void {
     paletteOpen: false,
     focusTaskId: null,
     syncDialogOpen: false,
+    historyOpen: false,
     syncStatus: "off",
     syncError: null,
     lastSyncAt: null,

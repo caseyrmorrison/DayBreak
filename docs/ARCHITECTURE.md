@@ -59,6 +59,7 @@ src/
     FocusOverlay.tsx    Full-screen focus timer
     BrainDump.tsx       Capture input → inbox
     InboxSheet.tsx      Inbox dialog: promote / delete
+    HistorySheet.tsx    Read-only last-30-days view (opens from streak)
     ShutdownDialog.tsx  Close-the-day summary and confirmation
     CommandPalette.tsx  cmd+K palette (capture + contextual actions)
     SyncDialog.tsx      Create/link/rotate sync, status, unlink

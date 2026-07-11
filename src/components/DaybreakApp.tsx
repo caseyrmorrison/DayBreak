@@ -5,6 +5,7 @@ import { todayKey } from "@/lib/dates";
 import { useDaybreak } from "@/lib/store";
 import { initSyncEngine, teardownSyncEngine } from "@/lib/sync";
 import CommandPalette from "./CommandPalette";
+import HistorySheet from "./HistorySheet";
 import Kickoff from "./Kickoff";
 import SyncDialog from "./SyncDialog";
 import TodayView from "./TodayView";
@@ -59,6 +60,7 @@ export default function DaybreakApp() {
       )}
       {hydrated && <CommandPalette today={today} />}
       {hydrated && <SyncDialog />}
+      {hydrated && <HistorySheet today={today} />}
     </main>
   );
 }

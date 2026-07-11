@@ -28,6 +28,9 @@ morning: pick **one big thing** (+ up to 2 backups) → **Start the day**
 → work: **Start** = focus timer; stray thoughts → ⌘K → inbox
 → evening: **Close the day** → unfinished rolls to tomorrow, streak ticks.
 
+Past days: tap the streak in the footer (or ⌘K → "Show history") —
+read-only, last 30 days.
+
 ## Commands (run in the project folder)
 
 | Command | Does |

@@ -55,6 +55,11 @@ Forgot to close? No punishment: tomorrow's kickoff finalizes yesterday
 automatically, streak credit included. Closed too early? **Reopen the
 day** brings it back.
 
+Want to see what you've done? **Tap the streak** in the footer (or
+⌘K → "Show history") for a read-only view of the last 30 days — each
+day's tasks and whether its big thing shipped. Days age out after 30;
+history is for glancing, not managing.
+
 ## Sync across your devices
 
 Daybreak has no accounts. Devices link with a **pairing code** that is

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Cloud, Moon, Play, Plus, Sun } from "lucide-react";
+import { Check, Cloud, History, Moon, Play, Plus, Sun } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LIMITS } from "@/lib/schema";
@@ -25,6 +25,7 @@ export default function CommandPalette({ today }: { today: string }) {
   const setFocusTask = useUi((s) => s.setFocusTask);
   const syncStatus = useUi((s) => s.syncStatus);
   const setSyncDialogOpen = useUi((s) => s.setSyncDialogOpen);
+  const setHistoryOpen = useUi((s) => s.setHistoryOpen);
   const plan = useDaybreak((s) => s.plans[today]);
   const addToInbox = useDaybreak((s) => s.addToInbox);
   const toggleTask = useDaybreak((s) => s.toggleTask);
@@ -124,6 +125,16 @@ export default function CommandPalette({ today }: { today: string }) {
       });
     }
 
+    contextual.push({
+      id: "history",
+      label: "Show history",
+      icon: <History aria-hidden />,
+      run: () => {
+        dismiss();
+        setHistoryOpen(true);
+      },
+    });
+
     contextual.push(
       syncStatus === "off"
         ? {
@@ -153,7 +164,7 @@ export default function CommandPalette({ today }: { today: string }) {
         : contextual),
     );
     return result;
-  }, [query, plan, today, addToInbox, toggleTask, closeDay, reopenDay, setFocusTask, handleOpenChange, syncStatus, setSyncDialogOpen]);
+  }, [query, plan, today, addToInbox, toggleTask, closeDay, reopenDay, setFocusTask, handleOpenChange, syncStatus, setSyncDialogOpen, setHistoryOpen]);
 
   const clampedHighlight = Math.min(highlighted, Math.max(actions.length - 1, 0));
 
