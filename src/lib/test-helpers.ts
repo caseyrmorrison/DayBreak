@@ -8,7 +8,6 @@ export function baseState(): PersistedState {
     inbox: [],
     inboxDeletions: {},
     streak: { count: 0, lastWinDate: null, updatedAt: EPOCH },
-    settings: { name: null, updatedAt: EPOCH },
   };
 }
 

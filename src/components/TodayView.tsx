@@ -14,7 +14,6 @@ import TaskRow from "./TaskRow";
 
 export default function TodayView({ today }: { today: string }) {
   const plan = useDaybreak((s) => s.plans[today]);
-  const name = useDaybreak((s) => s.settings.name);
   const streakState = useDaybreak((s) => s.streak);
   const toggleTask = useDaybreak((s) => s.toggleTask);
   const removeTask = useDaybreak((s) => s.removeTask);
@@ -39,7 +38,6 @@ export default function TodayView({ today }: { today: string }) {
         <p className="text-sm text-muted-foreground">{formatDateKey(today)}</p>
         <h1 className="mt-1 text-2xl font-medium tracking-tight">
           {greetingFor(new Date().getHours())}
-          {name ? `, ${name}` : ""}
         </h1>
       </header>
 

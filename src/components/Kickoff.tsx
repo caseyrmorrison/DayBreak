@@ -12,8 +12,6 @@ import { cn } from "@/lib/utils";
 const ESTIMATES = [25, 50, 90];
 
 export default function Kickoff({ today }: { today: string }) {
-  const name = useDaybreak((s) => s.settings.name);
-  const setName = useDaybreak((s) => s.setName);
   const startDay = useDaybreak((s) => s.startDay);
   const plans = useDaybreak((s) => s.plans);
   const inbox = useDaybreak((s) => s.inbox);
@@ -23,7 +21,6 @@ export default function Kickoff({ today }: { today: string }) {
   const [estimate, setEstimate] = useState<number | null>(null);
   const [second, setSecond] = useState("");
   const [third, setThird] = useState("");
-  const [nameDraft, setNameDraft] = useState("");
 
   const suggestions = useMemo(() => {
     const rollover = rolloverSuggestions({ plans }, today);
@@ -40,7 +37,6 @@ export default function Kickoff({ today }: { today: string }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!big.trim()) return;
-    if (!name && nameDraft.trim()) setName(nameDraft);
     const drafts: TaskDraft[] = [
       {
         title: big,
@@ -61,28 +57,8 @@ export default function Kickoff({ today }: { today: string }) {
         <p className="text-sm text-muted-foreground">{formatDateKey(today)}</p>
         <h1 className="mt-1 text-2xl font-medium tracking-tight">
           {greeting}
-          {name ? `, ${name}` : ""}
         </h1>
       </header>
-
-      {!name && (
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="kickoff-name"
-            className="text-sm text-muted-foreground"
-          >
-            What should Daybreak call you? (optional)
-          </label>
-          <Input
-            id="kickoff-name"
-            value={nameDraft}
-            maxLength={LIMITS.name}
-            onChange={(e) => setNameDraft(e.target.value)}
-            placeholder="Casey"
-            className="max-w-48"
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-3">
         <label htmlFor="kickoff-big" className="text-base font-medium">

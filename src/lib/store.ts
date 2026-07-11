@@ -29,7 +29,6 @@ type DaybreakState = PersistedState & {
   promoteInboxItem: (id: string, date: string) => boolean;
   closeDay: (date: string) => void;
   reopenDay: (date: string) => void;
-  setName: (name: string) => void;
   applyMergedState: (merged: PersistedState) => void;
 };
 
@@ -38,7 +37,6 @@ const initialData: PersistedState = {
   inbox: [],
   inboxDeletions: {},
   streak: { count: 0, lastWinDate: null, updatedAt: EPOCH },
-  settings: { name: null, updatedAt: EPOCH },
 };
 
 function now(): string {
@@ -128,6 +126,7 @@ function updatePlan(
 
 // v1 predates sync: no updatedAt stamps, no tombstones. Stamp with
 // EPOCH so anything written since always wins a merge against it.
+// (The retired `settings` record needs no migration — zod strips it.)
 export function migratePersistedState(
   persisted: unknown,
   version: number,
@@ -139,7 +138,6 @@ export function migratePersistedState(
     plans?: Record<string, { date: string; tasks: Task[]; shutdownAt?: string }>;
     inbox?: InboxItem[];
     streak?: { count: number; lastWinDate: string | null };
-    settings?: { name: string | null };
   };
   return {
     plans: Object.fromEntries(
@@ -151,7 +149,6 @@ export function migratePersistedState(
     inbox: v1.inbox ?? [],
     inboxDeletions: {},
     streak: { ...(v1.streak ?? { count: 0, lastWinDate: null }), updatedAt: EPOCH },
-    settings: { ...(v1.settings ?? { name: null }), updatedAt: EPOCH },
   };
 }
 
@@ -271,18 +268,12 @@ export const useDaybreak = create<DaybreakState>()(
           updatePlan(s, date, (plan) => ({ ...plan, shutdownAt: undefined })),
         ),
 
-      setName: (name) => {
-        const clean = sanitizeText(name, LIMITS.name);
-        set({ settings: { name: clean || null, updatedAt: now() } });
-      },
-
       applyMergedState: (merged) =>
         set({
           plans: merged.plans,
           inbox: merged.inbox,
           inboxDeletions: merged.inboxDeletions,
           streak: merged.streak,
-          settings: merged.settings,
         }),
     }),
     {
@@ -296,7 +287,6 @@ export const useDaybreak = create<DaybreakState>()(
         inbox: s.inbox,
         inboxDeletions: s.inboxDeletions,
         streak: s.streak,
-        settings: s.settings,
       }),
       merge: (persisted, current) => {
         const parsed = persistedStateSchema.safeParse(persisted);

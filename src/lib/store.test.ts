@@ -232,8 +232,7 @@ describe("persisted state validation", () => {
     useDaybreak
       .getState()
       .removeFromInbox(useDaybreak.getState().inbox[0].id);
-    const { plans, inbox, inboxDeletions, streak, settings } =
-      useDaybreak.getState();
+    const { plans, inbox, inboxDeletions, streak } = useDaybreak.getState();
     expect(Object.keys(inboxDeletions)).toHaveLength(1);
     expect(
       persistedStateSchema.safeParse({
@@ -241,12 +240,11 @@ describe("persisted state validation", () => {
         inbox,
         inboxDeletions,
         streak,
-        settings,
       }).success,
     ).toBe(true);
   });
 
-  it("migrates a v1 persisted shape to v2", () => {
+  it("migrates a v1 persisted shape to v2 and strips retired fields", () => {
     const v1 = {
       plans: {
         [TODAY]: {
@@ -273,7 +271,7 @@ describe("persisted state validation", () => {
         lastWinDate: YESTERDAY,
         updatedAt: EPOCH,
       });
-      expect(parsed.data.settings.name).toBe("Casey");
+      expect("settings" in parsed.data).toBe(false);
     }
   });
 

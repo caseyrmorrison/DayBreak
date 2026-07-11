@@ -5,7 +5,6 @@ export const LIMITS = {
   taskTitle: 200,
   taskNote: 280,
   inboxText: 500,
-  name: 40,
   maxTasksPerDay: 3,
   maxInboxItems: 200,
   maxEstimateMin: 480,
@@ -40,6 +39,8 @@ export const inboxItemSchema = z.object({
 
 // updatedAt stamps drive last-write-wins merging across devices; the
 // tombstone map keeps deleted inbox items from resurrecting on sync.
+// Unknown keys (e.g. the retired `settings` record) are stripped by
+// zod, which keeps old localStorage and old sync blobs compatible.
 export const persistedStateSchema = z.object({
   plans: z.record(dateKeySchema, dayPlanSchema),
   inbox: z.array(inboxItemSchema).max(LIMITS.maxInboxItems),
@@ -47,10 +48,6 @@ export const persistedStateSchema = z.object({
   streak: z.object({
     count: z.number().int().nonnegative(),
     lastWinDate: dateKeySchema.nullable(),
-    updatedAt: isoSchema,
-  }),
-  settings: z.object({
-    name: z.string().max(LIMITS.name).nullable(),
     updatedAt: isoSchema,
   }),
 });

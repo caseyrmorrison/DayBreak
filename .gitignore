@@ -47,3 +47,4 @@ data/
 
 # iOS build artifacts
 ios/build/
+ios/**/xcuserdata/

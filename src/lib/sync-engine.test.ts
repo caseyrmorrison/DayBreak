@@ -145,12 +145,10 @@ describe("runSyncCycle", () => {
     const { stored, transport } = memoryVault();
     const a = device({
       ...baseState(),
-      settings: { name: "Casey", updatedAt: "2026-07-04T08:00:00.000Z" },
       streak: { count: 4, lastWinDate: "2026-07-03", updatedAt: "2026-07-03T21:00:00.000Z" },
     });
     await runSyncCycle({ id, key, transport, today: TODAY, ...a });
     const stored2 = decryptState(key, stored.data!) as PersistedState;
-    expect(stored2.settings.name).toBe("Casey");
     expect(stored2.streak.count).toBe(4);
     expect(stored2.streak.updatedAt).not.toBe(EPOCH);
   });

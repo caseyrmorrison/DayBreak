@@ -102,11 +102,10 @@ describe("mergeStates inbox", () => {
   });
 });
 
-describe("mergeStates streak and settings", () => {
+describe("mergeStates streak", () => {
   it("prefers real content over empty defaults on a timestamp tie", () => {
     const migrated = state({
       streak: { count: 4, lastWinDate: "2026-07-03", updatedAt: EPOCH },
-      settings: { name: "Casey", updatedAt: EPOCH },
     });
     const fresh = baseState();
     for (const [x, y] of [
@@ -114,23 +113,20 @@ describe("mergeStates streak and settings", () => {
       [fresh, migrated],
     ] as const) {
       const merged = mergeStates(x, y, TODAY);
-      expect(merged.settings.name).toBe("Casey");
       expect(merged.streak.count).toBe(4);
     }
   });
 
-  it("last write wins for streak and settings", () => {
+  it("last write wins for the streak", () => {
     const a = state({
       streak: { count: 3, lastWinDate: "2026-07-03", updatedAt: "2026-07-03T20:00:00.000Z" },
-      settings: { name: "Casey", updatedAt: "2026-07-01T00:00:00.000Z" },
     });
     const b = state({
       streak: { count: 1, lastWinDate: "2026-07-01", updatedAt: "2026-07-01T20:00:00.000Z" },
-      settings: { name: "C. Morrison", updatedAt: "2026-07-02T00:00:00.000Z" },
     });
     const merged = mergeStates(a, b, TODAY);
     expect(merged.streak.count).toBe(3);
-    expect(merged.settings.name).toBe("C. Morrison");
+    expect(mergeStates(b, a, TODAY).streak.count).toBe(3);
   });
 });
 

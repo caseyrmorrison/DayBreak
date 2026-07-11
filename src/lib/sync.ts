@@ -109,7 +109,6 @@ function snapshot(): PersistedState {
     inbox: s.inbox,
     inboxDeletions: s.inboxDeletions,
     streak: s.streak,
-    settings: s.settings,
   };
 }
 
@@ -267,8 +266,7 @@ export function initSyncEngine(): void {
       state.plans !== prev.plans ||
       state.inbox !== prev.inbox ||
       state.inboxDeletions !== prev.inboxDeletions ||
-      state.streak !== prev.streak ||
-      state.settings !== prev.settings;
+      state.streak !== prev.streak;
     if (!dataChanged) return;
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => void syncNow(), SYNC_DEBOUNCE_MS);

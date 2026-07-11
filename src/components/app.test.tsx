@@ -31,17 +31,6 @@ describe("Kickoff", () => {
     expect(useDaybreak.getState().plans[TODAY]).toBeUndefined();
   });
 
-  it("captures the optional name on first run", async () => {
-    const user = userEvent.setup();
-    render(<Kickoff today={TODAY} />);
-    await user.type(screen.getByLabelText(/call you/i), "Casey");
-    await user.type(
-      screen.getByLabelText(/one thing that would make today a win/i),
-      "Ship it",
-    );
-    await user.click(screen.getByRole("button", { name: /start the day/i }));
-    expect(useDaybreak.getState().settings.name).toBe("Casey");
-  });
 });
 
 describe("TodayView", () => {

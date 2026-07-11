@@ -14,7 +14,7 @@ import {
 // - Plans are keyed by date and merged whole-plan by updatedAt.
 // - Inbox items are immutable once created: union by id, minus
 //   anything tombstoned in inboxDeletions (so deletes don't resurrect).
-// - Streak and settings are single records merged by updatedAt.
+// - The streak is a single record merged by updatedAt.
 // - Retention pruning (plans, tombstones) happens here too, so a sync
 //   can never reintroduce data the user aged out.
 
@@ -64,7 +64,7 @@ export function mergeStates(
     )
     .slice(0, LIMITS.maxInboxItems);
 
-  // Singleton records: last write wins, but on a timestamp tie (e.g.
+  // Singleton record: last write wins, but on a timestamp tie (e.g.
   // both sides carry migration-era epoch stamps) prefer meaningful
   // content over an empty default, then break remaining ties
   // deterministically so both devices converge.
@@ -80,19 +80,5 @@ export function mergeStates(
       : b.streak;
   })();
 
-  const settings = (() => {
-    if (a.settings.updatedAt !== b.settings.updatedAt) {
-      return a.settings.updatedAt > b.settings.updatedAt
-        ? a.settings
-        : b.settings;
-    }
-    if ((a.settings.name === null) !== (b.settings.name === null)) {
-      return a.settings.name !== null ? a.settings : b.settings;
-    }
-    return (a.settings.name ?? "") >= (b.settings.name ?? "")
-      ? a.settings
-      : b.settings;
-  })();
-
-  return { plans, inbox, inboxDeletions, streak, settings };
+  return { plans, inbox, inboxDeletions, streak };
 }
