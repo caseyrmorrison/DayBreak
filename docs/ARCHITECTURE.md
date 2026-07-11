@@ -88,7 +88,7 @@ scripts/
   (**index 0 is the big thing**), optional `shutdownAt`, `updatedAt`.
 - `InboxItem` — id, text, createdAt. Immutable once created.
 - `PersistedState` — plans record, inbox, `inboxDeletions` (tombstones),
-  streak, settings. Everything that syncs.
+  streak. Everything that syncs.
 
 `LIMITS` caps every string and collection (200-char titles, 3 tasks/day,
 200 inbox items, 30-day retention). The store enforces these *in the
@@ -173,9 +173,10 @@ Pure function, property-tested for idempotence and order-insensitivity:
   deterministically (JSON compare).
 - **Inbox**: union by id, minus tombstoned ids; tombstones keep the
   newest timestamp.
-- **Streak/settings** (singletons): higher `updatedAt` wins; on a *tie*,
-  prefer meaningful content over empty defaults (this bit exists because
-  migration-era epoch ties once let a fresh device erase the user name).
+- **Streak** (singleton): higher `updatedAt` wins; on a *tie*, prefer
+  meaningful content over empty defaults (this tie-break exists because
+  migration-era epoch ties once let a fresh device erase real data — it
+  guarded the now-removed user name, and still guards the streak count).
 - Retention pruning happens inside the merge so syncing can't
   reintroduce aged-out data.
 
