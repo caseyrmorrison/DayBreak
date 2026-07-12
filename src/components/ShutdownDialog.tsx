@@ -29,11 +29,13 @@ export default function ShutdownDialog({ today }: { today: string }) {
     <Dialog>
       <DialogTrigger
         className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+        aria-label="Close the day"
       >
         <Moon aria-hidden />
-        Close the day
+        <span className="hidden sm:inline">Close the day</span>
+        <span className="sm:hidden">Close</span>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {bigDone ? "Close out a good day" : "Close the day"}

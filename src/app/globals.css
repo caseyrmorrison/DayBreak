@@ -123,5 +123,33 @@
   }
   html {
     @apply font-sans;
+    /* Fill the notch/status-bar area with the app color, not black. */
+    background: var(--background);
   }
+}
+
+/* Unlayered (wins over Tailwind's text-sm/text-xs utilities): iOS
+   auto-zooms when a focused field is under 16px, so pin every text
+   field to 16px on phones. Kills the zoom-on-tap without disabling
+   pinch-to-zoom. */
+@media (max-width: 767.98px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Respect the safe-area insets (notch, home indicator) so content
+   never hides under system UI, and never allow sideways scrolling. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
 }

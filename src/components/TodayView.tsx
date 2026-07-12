@@ -33,6 +33,14 @@ export default function TodayView({ today }: { today: string }) {
   const streak = currentStreak({ streak: streakState }, today);
   const closed = Boolean(plan.shutdownAt);
   const focusTask = plan.tasks.find((t) => t.id === focusId) ?? null;
+  const syncLabel =
+    syncStatus === "off"
+      ? "Sync"
+      : syncStatus === "syncing"
+        ? "Syncing…"
+        : syncStatus === "error"
+          ? "Sync issue"
+          : "Synced";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -154,7 +162,7 @@ export default function TodayView({ today }: { today: string }) {
 
       <div className="mt-auto pt-12">
         <BrainDump />
-        <footer className="mt-4 flex items-center justify-between gap-4 border-t border-border pt-5 text-sm text-muted-foreground">
+        <footer className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-5 text-sm text-muted-foreground">
           <span className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -175,10 +183,11 @@ export default function TodayView({ today }: { today: string }) {
               capture
             </span>
           </span>
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="sm"
+              aria-label={syncLabel}
               onClick={() => setSyncDialogOpen(true)}
             >
               {syncStatus === "error" ? (
@@ -186,13 +195,7 @@ export default function TodayView({ today }: { today: string }) {
               ) : (
                 <Cloud aria-hidden />
               )}
-              {syncStatus === "off"
-                ? "Sync"
-                : syncStatus === "syncing"
-                  ? "Syncing…"
-                  : syncStatus === "error"
-                    ? "Sync issue"
-                    : "Synced"}
+              <span className="hidden sm:inline">{syncLabel}</span>
             </Button>
             <InboxSheet today={today} />
             {!closed && <ShutdownDialog today={today} />}

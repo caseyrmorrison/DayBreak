@@ -26,10 +26,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  // The app renders light regardless of system theme, so pin the
+  // status-bar / theme color to white — a dark theme-color is what
+  // paints a black bar above the content on some devices.
+  themeColor: "#ffffff",
+  // Extend under the notch/home indicator; CSS safe-area padding then
+  // keeps content clear of them.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -42,7 +45,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-dvh flex flex-col">
         <ServiceWorkerRegistrar />
         {children}
       </body>

@@ -38,13 +38,29 @@ export default function Kickoff({
   // When changing an already-prepared day, seed the form from it so
   // "Change" edits rather than starts from scratch. Read once at mount.
   const existing = prepare ? useDaybreak.getState().plans[date] : undefined;
+  const initEstimate = existing?.tasks[0]?.estimateMin ?? null;
   const [big, setBig] = useState(() => existing?.tasks[0]?.title ?? "");
   const [why, setWhy] = useState(() => existing?.tasks[0]?.note ?? "");
-  const [estimate, setEstimate] = useState<number | null>(
-    () => existing?.tasks[0]?.estimateMin ?? null,
+  const [estimate, setEstimate] = useState<number | null>(() => initEstimate);
+  // Custom-minutes field. Non-empty only when the estimate isn't a preset,
+  // so a preset chip and the custom field are never both "active".
+  const [estimateText, setEstimateText] = useState(() =>
+    initEstimate && !ESTIMATES.includes(initEstimate) ? String(initEstimate) : "",
   );
   const [second, setSecond] = useState(() => existing?.tasks[1]?.title ?? "");
   const [third, setThird] = useState(() => existing?.tasks[2]?.title ?? "");
+
+  const pickPreset = (min: number) => {
+    setEstimateText("");
+    setEstimate((current) => (current === min && !estimateText ? null : min));
+  };
+
+  const changeCustom = (raw: string) => {
+    const text = raw.replace(/[^0-9]/g, "").slice(0, 3);
+    setEstimateText(text);
+    const n = Number.parseInt(text, 10);
+    setEstimate(text && n > 0 ? Math.min(n, LIMITS.maxEstimateMin) : null);
+  };
 
   const suggestions = useMemo(() => {
     const rollover = rolloverSuggestions({ plans }, date);
@@ -117,22 +133,43 @@ export default function Kickoff({
         />
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground">Estimate:</span>
-          {ESTIMATES.map((min) => (
-            <button
-              key={min}
-              type="button"
-              aria-pressed={estimate === min}
-              onClick={() => setEstimate(estimate === min ? null : min)}
+          {ESTIMATES.map((min) => {
+            const active = !estimateText && estimate === min;
+            return (
+              <button
+                key={min}
+                type="button"
+                aria-pressed={active}
+                onClick={() => pickPreset(min)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs transition-colors",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground hover:border-primary hover:text-foreground",
+                )}
+              >
+                {min} min
+              </button>
+            );
+          })}
+          <span className="flex items-center gap-1">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              aria-label="Custom estimate in minutes"
+              value={estimateText}
+              onChange={(e) => changeCustom(e.target.value)}
+              placeholder="45"
               className={cn(
-                "rounded-full border px-3 py-1 text-xs transition-colors",
-                estimate === min
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-muted-foreground hover:border-primary hover:text-foreground",
+                "h-8 w-14 rounded-full border px-3 text-xs transition-colors outline-none focus-visible:border-primary",
+                estimateText
+                  ? "border-primary text-foreground"
+                  : "border-border text-muted-foreground",
               )}
-            >
-              {min} min
-            </button>
-          ))}
+            />
+            <span className="text-xs text-muted-foreground">min</span>
+          </span>
         </div>
         <label htmlFor="kickoff-why" className="sr-only">
           Why it matters

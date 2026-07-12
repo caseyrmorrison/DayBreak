@@ -28,11 +28,13 @@ export default function InboxSheet({ today }: { today: string }) {
     <Dialog>
       <DialogTrigger
         className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+        aria-label={`Inbox${inbox.length > 0 ? ` — ${inbox.length}` : ""}`}
       >
         <Inbox aria-hidden />
-        Inbox{inbox.length > 0 ? ` · ${inbox.length}` : ""}
+        <span className="hidden sm:inline">Inbox</span>
+        {inbox.length > 0 ? ` · ${inbox.length}` : ""}
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Inbox</DialogTitle>
           <DialogDescription>

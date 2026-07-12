@@ -58,7 +58,7 @@ export default function DaybreakApp() {
   }, [hydrated, today, reconcilePastDays]);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-1 flex-col px-6 py-14 sm:py-20">
+    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-6 py-14 sm:py-20">
       {!hydrated ? (
         <p className="text-sm text-muted-foreground" aria-busy="true">
           Loading your day…

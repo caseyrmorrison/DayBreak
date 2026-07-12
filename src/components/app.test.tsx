@@ -36,6 +36,33 @@ describe("Kickoff", () => {
     expect(useDaybreak.getState().plans[TODAY]).toBeUndefined();
   });
 
+  it("accepts a custom estimate", async () => {
+    const user = userEvent.setup();
+    render(<Kickoff date={TODAY} />);
+    await user.type(
+      screen.getByLabelText(/one thing that would make today a win/i),
+      "Big",
+    );
+    await user.type(
+      screen.getByLabelText(/custom estimate in minutes/i),
+      "45",
+    );
+    await user.click(screen.getByRole("button", { name: /start the day/i }));
+    expect(useDaybreak.getState().plans[TODAY].tasks[0].estimateMin).toBe(45);
+  });
+
+  it("uses a preset estimate chip", async () => {
+    const user = userEvent.setup();
+    render(<Kickoff date={TODAY} />);
+    await user.type(
+      screen.getByLabelText(/one thing that would make today a win/i),
+      "Big",
+    );
+    await user.click(screen.getByRole("button", { name: "90 min" }));
+    await user.click(screen.getByRole("button", { name: /start the day/i }));
+    expect(useDaybreak.getState().plans[TODAY].tasks[0].estimateMin).toBe(90);
+  });
+
   it("prepares tomorrow without starting it", async () => {
     const onComplete = vi.fn();
     const user = userEvent.setup();

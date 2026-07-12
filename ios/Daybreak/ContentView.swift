@@ -13,7 +13,11 @@ struct ContentView: View {
         ZStack {
             WebView(url: appURL, loadFailed: $loadFailed)
                 .id(attempt)
-                .ignoresSafeArea(.container, edges: .bottom)
+                // Fill the whole screen, including under the status bar and
+                // home indicator. The web app pads its own content using the
+                // CSS safe-area insets, so the status-bar area shows the app
+                // background instead of a black bar.
+                .ignoresSafeArea()
 
             if loadFailed {
                 VStack(spacing: 16) {
