@@ -11,6 +11,7 @@ import FocusOverlay from "./FocusOverlay";
 import InboxSheet from "./InboxSheet";
 import ShutdownDialog from "./ShutdownDialog";
 import TaskRow from "./TaskRow";
+import TomorrowPlan from "./TomorrowPlan";
 
 export default function TodayView({ today }: { today: string }) {
   const plan = useDaybreak((s) => s.plans[today]);
@@ -43,24 +44,27 @@ export default function TodayView({ today }: { today: string }) {
       </header>
 
       {closed ? (
-        <section className="mt-12 rounded-2xl border border-border p-6">
-          <h2 className="text-lg font-medium">
-            {bigThing.done ? "Day won." : "Day closed."}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {doneCount} of {plan.tasks.length} done.
-            {doneCount < plan.tasks.length
-              ? " Unfinished tasks will be suggested tomorrow."
-              : " See you tomorrow morning."}
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => reopenDay(today)}
-          >
-            Reopen the day
-          </Button>
-        </section>
+        <>
+          <section className="mt-12 rounded-2xl border border-border p-6">
+            <h2 className="text-lg font-medium">
+              {bigThing.done ? "Day won." : "Day closed."}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {doneCount} of {plan.tasks.length} done.
+              {doneCount < plan.tasks.length
+                ? " Unfinished tasks will be suggested tomorrow."
+                : " See you tomorrow morning."}
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => reopenDay(today)}
+            >
+              Reopen the day
+            </Button>
+          </section>
+          <TomorrowPlan today={today} />
+        </>
       ) : (
         <>
           <section aria-label="Your one big thing" className="mt-10">

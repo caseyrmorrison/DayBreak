@@ -1,10 +1,19 @@
 "use client";
 
-import { Check, Cloud, History, Moon, Play, Plus, Sun } from "lucide-react";
+import {
+  Check,
+  Cloud,
+  History,
+  Moon,
+  Play,
+  Plus,
+  Sun,
+  Sunrise,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LIMITS } from "@/lib/schema";
-import { useDaybreak } from "@/lib/store";
+import { preparedPlan, useDaybreak } from "@/lib/store";
 import { useUi } from "@/lib/ui-store";
 import { cn } from "@/lib/utils";
 
@@ -26,11 +35,15 @@ export default function CommandPalette({ today }: { today: string }) {
   const syncStatus = useUi((s) => s.syncStatus);
   const setSyncDialogOpen = useUi((s) => s.setSyncDialogOpen);
   const setHistoryOpen = useUi((s) => s.setHistoryOpen);
+  const setPrepareOpen = useUi((s) => s.setPrepareOpen);
   const plan = useDaybreak((s) => s.plans[today]);
+  const plans = useDaybreak((s) => s.plans);
   const addToInbox = useDaybreak((s) => s.addToInbox);
   const toggleTask = useDaybreak((s) => s.toggleTask);
   const closeDay = useDaybreak((s) => s.closeDay);
   const reopenDay = useDaybreak((s) => s.reopenDay);
+
+  const hasPrepared = Boolean(preparedPlan({ plans }, today));
 
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(0);
@@ -125,6 +138,20 @@ export default function CommandPalette({ today }: { today: string }) {
       });
     }
 
+    // Plan tomorrow — available once today exists and nothing is
+    // prepared yet. Its tasks stay locked until the day arrives.
+    if (plan && !hasPrepared) {
+      contextual.push({
+        id: "plan-tomorrow",
+        label: "Plan tomorrow",
+        icon: <Sunrise aria-hidden />,
+        run: () => {
+          dismiss();
+          setPrepareOpen(true);
+        },
+      });
+    }
+
     contextual.push({
       id: "history",
       label: "Show history",
@@ -164,7 +191,7 @@ export default function CommandPalette({ today }: { today: string }) {
         : contextual),
     );
     return result;
-  }, [query, plan, today, addToInbox, toggleTask, closeDay, reopenDay, setFocusTask, handleOpenChange, syncStatus, setSyncDialogOpen, setHistoryOpen]);
+  }, [query, plan, hasPrepared, today, addToInbox, toggleTask, closeDay, reopenDay, setFocusTask, handleOpenChange, syncStatus, setSyncDialogOpen, setHistoryOpen, setPrepareOpen]);
 
   const clampedHighlight = Math.min(highlighted, Math.max(actions.length - 1, 0));
 

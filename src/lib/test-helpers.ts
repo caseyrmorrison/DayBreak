@@ -19,6 +19,7 @@ export function resetStores(): void {
     focusTaskId: null,
     syncDialogOpen: false,
     historyOpen: false,
+    prepareOpen: false,
     syncStatus: "off",
     syncError: null,
     lastSyncAt: null,

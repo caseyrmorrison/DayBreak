@@ -1,21 +1,24 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useDaybreak } from "@/lib/store";
 import { resetStores } from "@/lib/test-helpers";
 import { useUi } from "@/lib/ui-store";
+import { addDays } from "@/lib/dates";
 import HistorySheet from "./HistorySheet";
 import Kickoff from "./Kickoff";
 import TodayView from "./TodayView";
+import TomorrowPlan from "./TomorrowPlan";
 
 const TODAY = "2026-07-04";
+const TOMORROW = addDays(TODAY, 1);
 
 beforeEach(resetStores);
 
 describe("Kickoff", () => {
   it("starts the day with the big thing", async () => {
     const user = userEvent.setup();
-    render(<Kickoff today={TODAY} />);
+    render(<Kickoff date={TODAY} />);
     await user.type(
       screen.getByLabelText(/one thing that would make today a win/i),
       "Ship the login flow",
@@ -28,11 +31,29 @@ describe("Kickoff", () => {
 
   it("does not start the day without a big thing", async () => {
     const user = userEvent.setup();
-    render(<Kickoff today={TODAY} />);
+    render(<Kickoff date={TODAY} />);
     await user.click(screen.getByRole("button", { name: /start the day/i }));
     expect(useDaybreak.getState().plans[TODAY]).toBeUndefined();
   });
 
+  it("prepares tomorrow without starting it", async () => {
+    const onComplete = vi.fn();
+    const user = userEvent.setup();
+    render(<Kickoff date={TOMORROW} mode="prepare" onComplete={onComplete} />);
+    await user.type(
+      screen.getByLabelText(/make tomorrow a win/i),
+      "Draft the pitch",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /save tomorrow's plan/i }),
+    );
+    const plan = useDaybreak.getState().plans[TOMORROW];
+    expect(plan.tasks[0].title).toBe("Draft the pitch");
+    expect(plan.date).toBe(TOMORROW);
+    expect(onComplete).toHaveBeenCalledOnce();
+    // No plan was created for today — preparing never starts a day.
+    expect(useDaybreak.getState().plans[TODAY]).toBeUndefined();
+  });
 });
 
 describe("TodayView", () => {
@@ -68,6 +89,42 @@ describe("TodayView", () => {
     expect(useDaybreak.getState().inbox[0].text).toBe(
       "research vector databases",
     );
+  });
+});
+
+describe("TomorrowPlan", () => {
+  it("offers to plan tomorrow when nothing is prepared", async () => {
+    useDaybreak.getState().startDay(TODAY, [{ title: "Big thing" }]);
+    const user = userEvent.setup();
+    render(<TomorrowPlan today={TODAY} />);
+    await user.click(screen.getByRole("button", { name: /plan tomorrow/i }));
+    expect(useUi.getState().prepareOpen).toBe(true);
+  });
+
+  it("previews a prepared plan read-only, with no way to start it", () => {
+    useDaybreak
+      .getState()
+      .prepareDay(TOMORROW, [{ title: "Locked big thing" }, { title: "Later" }]);
+    render(<TomorrowPlan today={TODAY} />);
+    expect(screen.getByText("Locked big thing")).toBeInTheDocument();
+    expect(screen.getByText("Later")).toBeInTheDocument();
+    // The lock is structural: no checkboxes, no start/focus controls.
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: /start/i })).toBeNull();
+    expect(
+      screen.getByText(/start these tomorrow morning/i),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("closed day", () => {
+  it("shows the tomorrow-planning card once the day is closed", () => {
+    useDaybreak.getState().startDay(TODAY, [{ title: "Big thing" }]);
+    useDaybreak.getState().closeDay(TODAY);
+    render(<TodayView today={TODAY} />);
+    expect(
+      screen.getByRole("button", { name: /plan tomorrow/i }),
+    ).toBeInTheDocument();
   });
 });
 

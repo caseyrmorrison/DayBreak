@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,22 +12,45 @@ import { cn } from "@/lib/utils";
 
 const ESTIMATES = [25, 50, 90];
 
-export default function Kickoff({ today }: { today: string }) {
+type KickoffMode = "today" | "prepare";
+
+// Shared planning form. In "today" mode it starts the current day; in
+// "prepare" mode it plans a future day (tomorrow) whose tasks stay
+// locked until that date arrives.
+export default function Kickoff({
+  date,
+  mode = "today",
+  onComplete,
+  onBack,
+}: {
+  date: string;
+  mode?: KickoffMode;
+  onComplete?: () => void;
+  onBack?: () => void;
+}) {
   const startDay = useDaybreak((s) => s.startDay);
+  const prepareDay = useDaybreak((s) => s.prepareDay);
   const plans = useDaybreak((s) => s.plans);
   const inbox = useDaybreak((s) => s.inbox);
 
-  const [big, setBig] = useState("");
-  const [why, setWhy] = useState("");
-  const [estimate, setEstimate] = useState<number | null>(null);
-  const [second, setSecond] = useState("");
-  const [third, setThird] = useState("");
+  const prepare = mode === "prepare";
+
+  // When changing an already-prepared day, seed the form from it so
+  // "Change" edits rather than starts from scratch. Read once at mount.
+  const existing = prepare ? useDaybreak.getState().plans[date] : undefined;
+  const [big, setBig] = useState(() => existing?.tasks[0]?.title ?? "");
+  const [why, setWhy] = useState(() => existing?.tasks[0]?.note ?? "");
+  const [estimate, setEstimate] = useState<number | null>(
+    () => existing?.tasks[0]?.estimateMin ?? null,
+  );
+  const [second, setSecond] = useState(() => existing?.tasks[1]?.title ?? "");
+  const [third, setThird] = useState(() => existing?.tasks[2]?.title ?? "");
 
   const suggestions = useMemo(() => {
-    const rollover = rolloverSuggestions({ plans }, today);
+    const rollover = rolloverSuggestions({ plans }, date);
     const fromInbox = inbox.slice(0, 5).map((i) => i.text);
     return [...new Set([...rollover, ...fromInbox])].slice(0, 6);
-  }, [plans, inbox, today]);
+  }, [plans, inbox, date]);
 
   const fillNextSlot = (text: string) => {
     if (!big.trim()) setBig(text);
@@ -46,23 +70,41 @@ export default function Kickoff({ today }: { today: string }) {
       ...(second.trim() ? [{ title: second }] : []),
       ...(third.trim() ? [{ title: third }] : []),
     ];
-    startDay(today, drafts);
+    const ok = prepare ? prepareDay(date, drafts) : startDay(date, drafts);
+    if (ok) onComplete?.();
   };
-
-  const greeting = greetingFor(new Date().getHours());
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-10">
       <header>
-        <p className="text-sm text-muted-foreground">{formatDateKey(today)}</p>
+        {prepare && onBack && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-ml-2.5 mb-3"
+            onClick={onBack}
+          >
+            <ArrowLeft aria-hidden />
+            Back to today
+          </Button>
+        )}
+        <p className="text-sm text-muted-foreground">{formatDateKey(date)}</p>
         <h1 className="mt-1 text-2xl font-medium tracking-tight">
-          {greeting}
+          {prepare ? "Plan tomorrow" : greetingFor(new Date().getHours())}
         </h1>
+        {prepare && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            You can start these when the day begins — not before.
+          </p>
+        )}
       </header>
 
       <div className="flex flex-col gap-3">
         <label htmlFor="kickoff-big" className="text-base font-medium">
-          What&apos;s the one thing that would make today a win?
+          {prepare
+            ? "What's the one thing that would make tomorrow a win?"
+            : "What's the one thing that would make today a win?"}
         </label>
         <Input
           id="kickoff-big"
@@ -133,7 +175,9 @@ export default function Kickoff({ today }: { today: string }) {
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
-            From yesterday and your inbox
+            {prepare
+              ? "From today and your inbox"
+              : "From yesterday and your inbox"}
           </p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((text) => (
@@ -152,18 +196,20 @@ export default function Kickoff({ today }: { today: string }) {
 
       <div>
         <Button type="submit" size="lg" disabled={!big.trim()}>
-          Start the day
+          {prepare ? "Save tomorrow's plan" : "Start the day"}
         </Button>
         <p className="mt-3 text-xs text-muted-foreground">
           Three tasks max. The point is choosing, not listing.
         </p>
-        <button
-          type="button"
-          onClick={() => useUi.getState().setSyncDialogOpen(true)}
-          className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
-        >
-          Have Daybreak on another device? Set up sync
-        </button>
+        {!prepare && (
+          <button
+            type="button"
+            onClick={() => useUi.getState().setSyncDialogOpen(true)}
+            className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Have Daybreak on another device? Set up sync
+          </button>
+        )}
       </div>
     </form>
   );

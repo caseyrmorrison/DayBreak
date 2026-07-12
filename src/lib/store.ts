@@ -22,6 +22,8 @@ type DaybreakState = PersistedState & {
   hydrated: boolean;
   markHydrated: () => void;
   startDay: (date: string, drafts: TaskDraft[]) => boolean;
+  prepareDay: (date: string, drafts: TaskDraft[]) => boolean;
+  reconcilePastDays: (today: string) => void;
   toggleTask: (date: string, taskId: string) => void;
   removeTask: (date: string, taskId: string) => void;
   addToInbox: (text: string) => boolean;
@@ -72,9 +74,10 @@ function prunePlans(
   today: string,
 ): Record<string, DayPlan> {
   const cutoff = addDays(today, -LIMITS.planRetentionDays);
-  return Object.fromEntries(
-    Object.entries(plans).filter(([date]) => date >= cutoff),
-  );
+  const entries = Object.entries(plans);
+  // Ref-stable when nothing is stale, so reconcile can no-op cleanly.
+  if (entries.every(([date]) => date >= cutoff)) return plans;
+  return Object.fromEntries(entries.filter(([date]) => date >= cutoff));
 }
 
 function applyWin(streak: Streak, date: string): Streak {
@@ -179,6 +182,38 @@ export const useDaybreak = create<DaybreakState>()(
         });
         return true;
       },
+
+      // Plan a future day (tomorrow). Unlike startDay it does not
+      // finalize or prune relative to that future date — preparing
+      // tomorrow must never close today. The plan sits inert until its
+      // date arrives, at which point it simply becomes today's plan;
+      // nothing renders its tasks as startable before then.
+      prepareDay: (date, drafts) => {
+        const existing = get().plans[date];
+        // Never overwrite a real, closed day.
+        if (existing?.shutdownAt) return false;
+        const tasks = drafts
+          .map(makeTask)
+          .filter((t): t is Task => t !== null)
+          .slice(0, LIMITS.maxTasksPerDay);
+        if (tasks.length === 0) return false;
+        set((s) => ({
+          plans: { ...s.plans, [date]: { date, tasks, updatedAt: now() } },
+        }));
+        return true;
+      },
+
+      // Close out any past days left open (crediting the streak for a
+      // finished big thing) and drop plans past retention. Run on app
+      // open and when the local date ticks over — including when a
+      // plan prepared last night silently becomes today.
+      reconcilePastDays: (today) =>
+        set((s) => {
+          const finalized = finalizeOpenPastPlans(s.plans, s.streak, today);
+          const plans = prunePlans(finalized.plans, today);
+          if (plans === s.plans && finalized.streak === s.streak) return {};
+          return { plans, streak: finalized.streak };
+        }),
 
       toggleTask: (date, taskId) =>
         set((s) =>
@@ -323,6 +358,18 @@ export function planHistory(
   return Object.values(state.plans)
     .filter((p) => p.date < today)
     .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// The nearest not-yet-started day (tomorrow, usually) if one is
+// prepared. Its tasks stay locked until its date is today.
+export function preparedPlan(
+  state: Pick<PersistedState, "plans">,
+  today: string,
+): DayPlan | null {
+  const future = Object.values(state.plans)
+    .filter((p) => p.date > today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return future[0] ?? null;
 }
 
 export function rolloverSuggestions(

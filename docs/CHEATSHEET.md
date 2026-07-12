@@ -31,6 +31,10 @@ morning: pick **one big thing** (+ up to 2 backups) → **Start the day**
 Past days: tap the streak in the footer (or ⌘K → "Show history") —
 read-only, last 30 days.
 
+Next day: close the day → "Plan tomorrow" (or ⌘K → "Plan tomorrow").
+A prepared plan is locked (read-only) until its date arrives, then
+becomes your active day automatically.
+
 ## Commands (run in the project folder)
 
 | Command | Does |

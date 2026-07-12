@@ -52,9 +52,10 @@ src/
     manifest.ts         PWA manifest (metadata route)
     api/sync/route.ts   The vault: pull / push (compare-and-swap) / delete
   components/
-    DaybreakApp.tsx     Hydration gate, today-key ticker, sync engine lifecycle
-    Kickoff.tsx         Morning planning form (+ suggestion chips)
+    DaybreakApp.tsx     Hydration gate, today-key ticker, reconcile, sync lifecycle
+    Kickoff.tsx         Planning form — today or prepare-tomorrow mode
     TodayView.tsx       Main screen: big thing, backups, footer
+    TomorrowPlan.tsx    Closed-day card: plan tomorrow / locked preview
     TaskRow.tsx         Checkbox row (role="checkbox", motion check animation)
     FocusOverlay.tsx    Full-screen focus timer
     BrainDump.tsx       Capture input → inbox
@@ -71,7 +72,7 @@ src/
     merge.ts            Pure record-level merge for sync
     sync-crypto.ts      Pairing codes, key derivation, AES-GCM blobs
     sync.ts             Sync engine: transport, cycle, auto-sync triggers
-    ui-store.ts         Ephemeral UI state (palette, focus, sync status)
+    ui-store.ts         Ephemeral UI state (palette, focus, prepare, sync status)
     server/db.ts        libsql client factory (file: or Turso via env)
 public/
   sw.js                 Service worker (offline app shell)
@@ -87,6 +88,11 @@ scripts/
 - `Task` — id (UUID), title, optional note/estimate, done, completedAt.
 - `DayPlan` — date key (`YYYY-MM-DD`, local timezone), 1–3 tasks
   (**index 0 is the big thing**), optional `shutdownAt`, `updatedAt`.
+  A plan whose date is in the future is a *prepared* day (planned the
+  night before). No flag marks it "locked" — the lock is structural:
+  `TodayView` only ever renders `plans[today]`, so a future-dated
+  plan's tasks are simply never given start/toggle controls until its
+  date is today, at which point it becomes the active day unchanged.
 - `InboxItem` — id, text, createdAt. Immutable once created.
 - `PersistedState` — plans record, inbox, `inboxDeletions` (tombstones),
   streak. Everything that syncs.
@@ -123,6 +129,14 @@ Domain rules worth knowing:
 
 - `startDay` also *finalizes* any unclosed past day (streak credit for a
   done big thing) and prunes plans past retention.
+- `prepareDay(date, drafts)` plans a *future* day without finalizing or
+  pruning against it — preparing tomorrow must never close today. It
+  refuses to overwrite a closed day but replaces an existing prepared
+  one (the "Change" flow).
+- `reconcilePastDays(today)` runs on app open and every date tick: it
+  finalizes any still-open past day (crediting the streak) and prunes.
+  This is what closes out yesterday when a plan prepared the night
+  before silently becomes today — a path `startDay` never runs.
 - Streaks count consecutive days where the big thing was done, tracked as
   `{count, lastWinDate}`. `currentStreak()` shows 0 once a day is missed.
 - Deleting an inbox item (or promoting it into today) writes a tombstone

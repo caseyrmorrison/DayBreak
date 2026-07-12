@@ -55,6 +55,22 @@ Forgot to close? No punishment: tomorrow's kickoff finalizes yesterday
 automatically, streak credit included. Closed too early? **Reopen the
 day** brings it back.
 
+## Planning the next day
+
+Some nights you want to line up tomorrow before bed; some mornings you'd
+rather decide fresh. Daybreak supports both. Once you **close the day**,
+a "Plan tomorrow" card appears — or reach it any time from ⌘K → "Plan
+tomorrow". It's the same one-big-thing form, aimed at tomorrow.
+
+The catch, by design: a plan you make for tomorrow is **locked**. It
+shows as a read-only preview ("Ready for tomorrow") with no way to start
+or check anything off — you can't get ahead of yourself. When tomorrow
+actually arrives, that plan quietly becomes your active day, fully
+startable, right where you left it. Prefer to plan in the morning
+instead? Just don't — open the app tomorrow and the normal kickoff is
+waiting. Change your mind about a prepared plan? **Change** re-opens it
+with your tasks filled in.
+
 Want to see what you've done? **Tap the streak** in the footer (or
 ⌘K → "Show history") for a read-only view of the last 30 days — each
 day's tasks and whether its big thing shipped. Days age out after 30;

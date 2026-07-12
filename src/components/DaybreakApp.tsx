@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { todayKey } from "@/lib/dates";
+import { addDays, todayKey } from "@/lib/dates";
 import { useDaybreak } from "@/lib/store";
 import { initSyncEngine, teardownSyncEngine } from "@/lib/sync";
+import { useUi } from "@/lib/ui-store";
 import CommandPalette from "./CommandPalette";
 import HistorySheet from "./HistorySheet";
 import Kickoff from "./Kickoff";
@@ -26,6 +27,9 @@ export default function DaybreakApp() {
   const hydrated = useDaybreak((s) => s.hydrated);
   const today = useTodayKey();
   const plan = useDaybreak((s) => s.plans[today]);
+  const reconcilePastDays = useDaybreak((s) => s.reconcilePastDays);
+  const prepareOpen = useUi((s) => s.prepareOpen);
+  const setPrepareOpen = useUi((s) => s.setPrepareOpen);
 
   useEffect(() => {
     const markAnyway = () => {
@@ -47,16 +51,29 @@ export default function DaybreakApp() {
     return teardownSyncEngine;
   }, [hydrated]);
 
+  // On open and whenever the local date ticks over, close out any days
+  // left open — including a plan prepared last night that is now today.
+  useEffect(() => {
+    if (hydrated) reconcilePastDays(today);
+  }, [hydrated, today, reconcilePastDays]);
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-1 flex-col px-6 py-14 sm:py-20">
       {!hydrated ? (
         <p className="text-sm text-muted-foreground" aria-busy="true">
           Loading your day…
         </p>
+      ) : prepareOpen ? (
+        <Kickoff
+          date={addDays(today, 1)}
+          mode="prepare"
+          onComplete={() => setPrepareOpen(false)}
+          onBack={() => setPrepareOpen(false)}
+        />
       ) : plan ? (
         <TodayView today={today} />
       ) : (
-        <Kickoff today={today} />
+        <Kickoff date={today} />
       )}
       {hydrated && <CommandPalette today={today} />}
       {hydrated && <SyncDialog />}

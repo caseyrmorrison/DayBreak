@@ -48,3 +48,6 @@ data/
 # iOS build artifacts
 ios/build/
 ios/**/xcuserdata/
+
+# local skills (not part of the app)
+.claude/skills/

@@ -5,6 +5,7 @@ import {
   currentStreak,
   migratePersistedState,
   planHistory,
+  preparedPlan,
   rolloverSuggestions,
   useDaybreak,
 } from "./store";
@@ -223,6 +224,101 @@ describe("rolloverSuggestions", () => {
     expect(rolloverSuggestions(useDaybreak.getState(), "2026-07-01")).toEqual(
       [],
     );
+  });
+});
+
+describe("prepareDay", () => {
+  const TOMORROW = addDays(TODAY, 1);
+
+  it("creates a future plan without touching today", () => {
+    useDaybreak.getState().startDay(TODAY, [{ title: "today big" }]);
+    const ok = useDaybreak
+      .getState()
+      .prepareDay(TOMORROW, [{ title: "  tomorrow big  " }, { title: "backup" }]);
+    expect(ok).toBe(true);
+    const state = useDaybreak.getState();
+    // Today remains open and untouched.
+    expect(state.plans[TODAY].shutdownAt).toBeUndefined();
+    expect(state.plans[TOMORROW].tasks[0].title).toBe("tomorrow big");
+    expect(state.plans[TOMORROW].tasks).toHaveLength(2);
+  });
+
+  it("does not finalize an open today when preparing tomorrow", () => {
+    useDaybreak.getState().startDay(TODAY, [{ title: "won" }]);
+    const id = useDaybreak.getState().plans[TODAY].tasks[0].id;
+    useDaybreak.getState().toggleTask(TODAY, id);
+    useDaybreak.getState().prepareDay(TOMORROW, [{ title: "next" }]);
+    // Streak is only credited on close/reconcile, never on prepare.
+    expect(useDaybreak.getState().streak.count).toBe(0);
+    expect(useDaybreak.getState().plans[TODAY].shutdownAt).toBeUndefined();
+  });
+
+  it("rejects an empty draft and refuses to overwrite a closed day", () => {
+    expect(useDaybreak.getState().prepareDay(TOMORROW, [{ title: "  " }])).toBe(
+      false,
+    );
+    useDaybreak.getState().startDay(TODAY, [{ title: "big" }]);
+    useDaybreak.getState().closeDay(TODAY);
+    expect(useDaybreak.getState().prepareDay(TODAY, [{ title: "nope" }])).toBe(
+      false,
+    );
+    expect(useDaybreak.getState().plans[TODAY].tasks[0].title).toBe("big");
+  });
+
+  it("overwrites an existing prepared plan (change flow)", () => {
+    useDaybreak.getState().prepareDay(TOMORROW, [{ title: "first draft" }]);
+    useDaybreak.getState().prepareDay(TOMORROW, [{ title: "second draft" }]);
+    expect(useDaybreak.getState().plans[TOMORROW].tasks[0].title).toBe(
+      "second draft",
+    );
+  });
+});
+
+describe("reconcilePastDays", () => {
+  const TOMORROW = addDays(TODAY, 1);
+
+  it("finalizes an open past day and credits the streak", () => {
+    useDaybreak.getState().startDay(YESTERDAY, [{ title: "won" }]);
+    const id = useDaybreak.getState().plans[YESTERDAY].tasks[0].id;
+    useDaybreak.getState().toggleTask(YESTERDAY, id);
+    useDaybreak.getState().reconcilePastDays(TODAY);
+    const state = useDaybreak.getState();
+    expect(state.plans[YESTERDAY].shutdownAt).toBeDefined();
+    expect(state.streak).toMatchObject({ count: 1, lastWinDate: YESTERDAY });
+  });
+
+  it("leaves a prepared future plan untouched", () => {
+    useDaybreak.getState().prepareDay(TOMORROW, [{ title: "future" }]);
+    useDaybreak.getState().reconcilePastDays(TODAY);
+    expect(useDaybreak.getState().plans[TOMORROW].shutdownAt).toBeUndefined();
+  });
+
+  it("is a no-op when there is nothing to close or prune", () => {
+    useDaybreak.getState().startDay(TODAY, [{ title: "today" }]);
+    const before = useDaybreak.getState().plans;
+    useDaybreak.getState().reconcilePastDays(TODAY);
+    // Same reference — no churn, so sync isn't triggered needlessly.
+    expect(useDaybreak.getState().plans).toBe(before);
+  });
+
+  it("prunes plans past the retention window", () => {
+    const ancient = addDays(TODAY, -(LIMITS.planRetentionDays + 5));
+    useDaybreak.getState().startDay(ancient, [{ title: "old" }]);
+    useDaybreak.getState().reconcilePastDays(TODAY);
+    expect(useDaybreak.getState().plans[ancient]).toBeUndefined();
+  });
+});
+
+describe("preparedPlan", () => {
+  it("returns the nearest future plan, or null", () => {
+    expect(preparedPlan(useDaybreak.getState(), TODAY)).toBeNull();
+    useDaybreak.getState().startDay(TODAY, [{ title: "today" }]);
+    useDaybreak.getState().prepareDay(addDays(TODAY, 2), [{ title: "far" }]);
+    useDaybreak.getState().prepareDay(addDays(TODAY, 1), [{ title: "near" }]);
+    const prepared = preparedPlan(useDaybreak.getState(), TODAY);
+    expect(prepared?.tasks[0].title).toBe("near");
+    // Today's own plan is never "prepared".
+    expect(prepared?.date).toBe(addDays(TODAY, 1));
   });
 });
 

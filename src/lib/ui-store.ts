@@ -9,6 +9,7 @@ type UiState = {
   focusTaskId: string | null;
   syncDialogOpen: boolean;
   historyOpen: boolean;
+  prepareOpen: boolean;
   syncStatus: SyncStatus;
   syncError: string | null;
   lastSyncAt: string | null;
@@ -16,6 +17,7 @@ type UiState = {
   setFocusTask: (taskId: string | null) => void;
   setSyncDialogOpen: (open: boolean) => void;
   setHistoryOpen: (open: boolean) => void;
+  setPrepareOpen: (open: boolean) => void;
   setSyncState: (state: {
     status?: SyncStatus;
     error?: string | null;
@@ -28,6 +30,7 @@ export const useUi = create<UiState>()((set) => ({
   focusTaskId: null,
   syncDialogOpen: false,
   historyOpen: false,
+  prepareOpen: false,
   syncStatus: "off",
   syncError: null,
   lastSyncAt: null,
@@ -35,6 +38,7 @@ export const useUi = create<UiState>()((set) => ({
   setFocusTask: (taskId) => set({ focusTaskId: taskId }),
   setSyncDialogOpen: (open) => set({ syncDialogOpen: open }),
   setHistoryOpen: (open) => set({ historyOpen: open }),
+  setPrepareOpen: (open) => set({ prepareOpen: open }),
   setSyncState: ({ status, error, lastSyncAt }) =>
     set((s) => ({
       syncStatus: status ?? s.syncStatus,

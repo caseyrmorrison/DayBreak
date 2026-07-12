@@ -55,6 +55,10 @@ export default function ShutdownDialog({ today }: { today: string }) {
             </ul>
           </div>
         )}
+        <p className="text-xs text-muted-foreground">
+          Once it&apos;s closed, you can plan tomorrow — or leave it for the
+          morning.
+        </p>
         <DialogFooter>
           <DialogClose className={cn(buttonVariants({ variant: "outline" }))}>
             Keep going
