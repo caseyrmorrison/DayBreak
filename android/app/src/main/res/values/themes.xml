@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app renders light regardless of system theme (matching the
+         web app), so pin a light theme with dark status-bar icons. -->
+    <style name="Theme.Daybreak" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

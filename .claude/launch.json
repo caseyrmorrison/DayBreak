@@ -5,13 +5,15 @@
       "name": "daybreak",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     },
     {
       "name": "daybreak-prod",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "prod"],
-      "port": 3200
+      "runtimeArgs": ["run", "start"],
+      "port": 3200,
+      "autoPort": true
     }
   ]
 }

@@ -51,3 +51,10 @@ ios/**/xcuserdata/
 
 # local skills (not part of the app)
 .claude/skills/
+
+# Android build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
